@@ -1,0 +1,131 @@
+{
+  "status": "local_component_and_assembled_slice_verified",
+  "component_comparison": "original_and_duplicate_selected_contracts_passed",
+  "assembled": "assembled_unit_tests_and_build_passed",
+  "durable_process": "durable_process_restart_and_lost_ack_passed",
+  "runtime_components": [
+    {
+      "import": "github.com/ThreeDotsLabs/watermill-sqlite/wmsqlitemodernc",
+      "path": "components/watermill-sqlite/wmsqlitemodernc",
+      "files": [
+        "errors.go",
+        "expiringkey.go",
+        "publisher.go",
+        "subscriber.go",
+        "subscription.go",
+        "topic.go",
+        "wmsqlitemodernc.go"
+      ]
+    },
+    {
+      "import": "github.com/ThreeDotsLabs/watermill/components/forwarder",
+      "path": "components/watermill/components/forwarder",
+      "files": [
+        "envelope.go",
+        "forwarder.go",
+        "marshaler.go",
+        "publisher.go"
+      ]
+    }
+  ],
+  "source_files": {
+    "app/go.mod": "58d2cae400c90a9cd708a0a423ab4fc8e90555be003fbd765e8b47ba92735503",
+    "app/go.sum": "0490989a79a5a6ef8d3c99f56ae92c0cd523be1a48c6288af999801bc76d9c99",
+    "app/main.go": "c77db852c852cf1de797a5d07137492b73b0f6b653bb597d2ad5e1993aa17390",
+    "app/main_test.go": "07d0a9d3963a9d914e01af9251c0e07d28bae6284c4529c69223b8fdc2fad82b"
+  },
+  "binary_sha256": "9b1dc870e037f9fb09daa30d00e5355a73a75b2f659e42bea0c9b23aebbc60b9",
+  "observed_final_state": {
+    "producer": {
+      "orders": 1,
+      "outbox": 1,
+      "acked": 1
+    },
+    "receiver": {
+      "receipts": 1,
+      "effects": 1,
+      "deliveries": 2
+    },
+    "conflicting_payload_status": 409
+  },
+  "source_preservation": [
+    {
+      "stage": "original",
+      "component": "watermill",
+      "changed": []
+    },
+    {
+      "stage": "duplicate",
+      "component": "watermill",
+      "changed": []
+    },
+    {
+      "stage": "original",
+      "component": "watermill-sqlite",
+      "changed": []
+    },
+    {
+      "stage": "duplicate",
+      "component": "watermill-sqlite",
+      "changed": []
+    }
+  ],
+  "public_writes": [],
+  "authoritative_local_receipts": [
+    ".verification/component-verified/receipt.json",
+    ".verification/shutdown-focused/receipt.json",
+    ".verification/assembled-4/receipt.json",
+    ".verification/durable-2/receipt.json"
+  ],
+  "historical_local_receipts": [
+    ".verification/component-verified/receipt.json",
+    ".verification/assembled-3/receipt.json",
+    ".verification/durable-1/receipt.json"
+  ],
+  "prior_source_files": {
+    "app/go.mod": "58d2cae400c90a9cd708a0a423ab4fc8e90555be003fbd765e8b47ba92735503",
+    "app/go.sum": "0490989a79a5a6ef8d3c99f56ae92c0cd523be1a48c6288af999801bc76d9c99",
+    "app/main.go": "3f5e3dd203feb05337cafa74ff3c64ea7aea70f5e2ba27e036c4feea1e673f9c",
+    "app/main_test.go": "242d665b336d72fba3914ed5f684cc5a2b59dcf20a828430dfb581421cb716d6"
+  },
+  "shutdown_correction": {
+    "finding": "OUTBOX-SHUTDOWN-1",
+    "regression_status": "regression_fails_before_and_passes_after",
+    "passed_app_test_count": 5,
+    "before_snapshot_receipt": ".verification/shutdown-fix-before/receipt.json"
+  },
+  "public_procedure": {
+    "observed_at_utc": "2026-10-09T10:45:45.218430+00:00",
+    "receipts": {
+      "public-components": {
+        "status": "copied_selected_contracts_passed",
+        "receipt_sha256": "150ab396112cef156d403cb3f797f310b809554bde422a3f2035bef19228281b"
+      },
+      "public-app": {
+        "status": "assembled_unit_tests_and_build_passed",
+        "receipt_sha256": "67a6c9fec7010353e505e36195bfe91864c64e87c446f503de37c453629e410a"
+      },
+      "public-durable": {
+        "status": "durable_process_restart_and_lost_ack_passed",
+        "receipt_sha256": "c2f25e1fd0c1bc57febad900efb0dd63201ac0d37a588abc722d388df9d2bf32"
+      }
+    },
+    "app_tests": 5,
+    "dependency_cache": "existing checksum-verified cache reused; fresh download untested",
+    "remote_CI": "unrun"
+  },
+  "independent_shutdown_correction": {
+    "finding": "OUTBOX-SHUTDOWN-1",
+    "verdict": "resolved",
+    "pending_post_completed_after_SIGTERM": true,
+    "HTTP_status": 200,
+    "receipt_effect_delivery_counts": [
+      1,
+      1,
+      1
+    ],
+    "exit_code": 0,
+    "timeout_branch": "not independently probed",
+    "report_sha256": "0886528b814795f1bc39f8c7681464cd3f2b6a0e31e3e65375109b76d6fda39c"
+  }
+}

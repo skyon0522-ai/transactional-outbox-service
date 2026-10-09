@@ -1,0 +1,9 @@
+.go-cache/
+.go-proxy/
+.original/
+.verification/
+outbox
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

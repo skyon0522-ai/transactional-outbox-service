@@ -1,0 +1,31 @@
+name: Verify copied components and durable outbox
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  local-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: app/go.mod
+          cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify copied source contracts
+        run: python tools/verify_components.py ci-components
+      - name: Verify the assembled application
+        run: python tools/verify_app.py ci-app
+      - name: Verify durable restart and lost acknowledgment
+        run: python tools/verify_durable_restart.py ci-app ci-durable
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-receipts
+          include-hidden-files: true
+          path: |
+            .verification/ci-components/receipt.json
+            .verification/ci-app/receipt.json
+            .verification/ci-durable/receipt.json

@@ -1,0 +1,19 @@
+{
+  "source": "components/watermill/_examples/real-world-examples/transactional-events-forwarder/main.go",
+  "source_sha256": "deb5b709c68ec11bac0cb9ee274b618807b8e15c5ae6dd6c3341e90662cac73f",
+  "copied_to": "app/main.go",
+  "initial_copy_sha256": "deb5b709c68ec11bac0cb9ee274b618807b8e15c5ae6dd6c3341e90662cac73f",
+  "adaptation": "same-transaction source pattern adapted to copied SQLite components and local deduplicating receiver",
+  "final_application_sha256": "c77db852c852cf1de797a5d07137492b73b0f6b653bb597d2ad5e1993aa17390",
+  "exact_diff": "adaptation.diff",
+  "exact_diff_sha256": "9463bc42a7cd73abfa10a99e1da1b636338581cd6d94ff8ae9defeec2d136e3f",
+  "prior_snapshot": {
+    "application_sha256": "3f5e3dd203feb05337cafa74ff3c64ea7aea70f5e2ba27e036c4feea1e673f9c",
+    "diff_sha256": "375bc26b9634c319fc7dab43a41eb1588110e7d5680238d2fe176c39bba56c4b",
+    "preserved_metadata": ".verification/shutdown-fix-before/adaptation.json"
+  },
+  "review_correction": {
+    "finding": "OUTBOX-SHUTDOWN-1",
+    "regression_receipt": ".verification/shutdown-focused/receipt.json"
+  }
+}
