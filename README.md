@@ -9,7 +9,7 @@ The producer never sends a purchase directly to the receiver. The copied transac
 | Start here | Purpose |
 | --- | --- |
 | [app/main.go](app/main.go) | Adapted producer, forwarder and local receiver |
-| [app/main_test.go](app/main_test.go) and [tools/](tools/) | Contract, source identity and durable restart checks |
+| [app/main_test.go](app/main_test.go), [source check](tools/verify_app.py) and [restart check](tools/verify_durable_restart.py) | Contract, source identity and durable restart checks |
 | [components/watermill/](components/watermill/) and [components/watermill-sqlite/](components/watermill-sqlite/) | Unchanged running message/SQLite implementations |
 | [PROVENANCE.md](PROVENANCE.md) and [adaptation.diff](adaptation.diff) | Source analysis, licenses and exact application changes |
 | [VERIFICATION.md](VERIFICATION.md) and [verification-summary.json](verification-summary.json) | Observed results and limits |
