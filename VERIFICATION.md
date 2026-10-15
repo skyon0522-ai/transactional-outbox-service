@@ -1,4 +1,39 @@
-# Observed verification: 2026-10-09
+# Observed verification
+
+## Linux demo candidate: 2026-10-15
+
+A fresh native Linux working copy outside the staged checkout passed the public
+build and demo commands with Go 1.27.2 and Python 3. The Go build cache started
+empty; the existing module-download cache was reused. `-count=1` disabled Go
+test-result reuse, and `go mod verify` passed. This run does not demonstrate a
+fresh dependency download. No global runtime was installed.
+
+| Executed check | Observed result |
+| --- | --- |
+| `python3 -B -m unittest discover -s tools -p 'test_run_demo.py' -v` | 7 runner safety tests passed |
+| `python3 -B tools/verify_components.py native-components` | 3 top-level Forwarder tests with 3 subtests, and 2 selected SQLite tests passed |
+| `python3 -B tools/verify_app.py native-app` | 5 app integration tests, module verification, dependency paths and build passed |
+| README build, then `python3 -B tools/run_demo.py --output-dir demo-runs/first` | All 6 checks passed; relay and receiver exited 0 without forced termination |
+| Repeat the same demo output path | Exit 1; all 22 retained files unchanged |
+| Demo with `/bin/false` as its executable | Exit 1; retained `failed` receipt and incomplete report |
+| `python3 -B tools/verify_durable_restart.py native-app native-durable` | Durable restart, lost response, duplicate receipt and conflicting-ID checks passed |
+| Source preservation before and after | All 549 Watermill and 48 SQLite files unchanged; app source, tests and module manifests unchanged |
+
+The runner safety tests cover an existing directory and symlink, failure after
+starting an owned child, an unexpected clean child exit, report-writing failure,
+an incomplete final receipt write and HTML escaping. The final JSON completion
+marker is written only after observed checks, owned-process cleanup and report
+creation. A `running`, `failed` or missing receipt remains incomplete even if a
+report file exists.
+
+The generated [example report](examples/demo/report.html) and
+[result](examples/demo/result.json) retain this synthetic run without personal
+paths. Full local command logs, databases, hashes and cache evidence are kept
+outside the public tree. The copied implementation and existing restart probe
+are unchanged. This candidate's updated workflow has not run remotely; visual
+and independent review are recorded separately from the execution checks.
+
+## Earlier application evidence: 2026-10-09
 
 The recorded local run used Go 1.27.2 from its official hash-verified archive. The component and app checks used `GOTOOLCHAIN=local`, `GOFLAGS=-mod=readonly`, task-local module/build caches, and `GOSUMDB=sum.golang.org`. Only the authored application's `go.mod`/`go.sum` were provisioned by an explicit `go mod tidy`; upstream manifests stayed unchanged.
 
@@ -60,4 +95,4 @@ python3 tools/verify_durable_restart.py public-app public-durable
 
 Use fresh labels for another run. The helpers derive from the candidate's executed verification tools. The public component helper checks the copied sources and two selected SQLite tests; it does not repeat the historical original-tree comparison. The application helper runs the pinned module checks and builds without rewriting source or module manifests. Go downloads normal dependencies through its standard checksum-verified module route. The durable helper starts and stops separate loopback-only processes against new synthetic databases.
 
-The staged public procedure passed both selected SQLite tests, the Forwarder contracts, all five app tests, module verification, build and a fresh durable restart/lost-response run. This run reused the existing checksum-verified dependency cache; a new dependency download was not tested. The workflow in `.github/workflows/checks.yml` uses this procedure. Remote CI has not run.
+The staged public procedure passed both selected SQLite tests, the Forwarder contracts, all five app tests, module verification, build and a fresh durable restart/lost-response run. This run reused the existing checksum-verified dependency cache; a new dependency download was not tested. The workflow in `.github/workflows/checks.yml` uses this procedure. That original verification snapshot did not include a remote CI run.

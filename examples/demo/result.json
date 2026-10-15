@@ -1,0 +1,153 @@
+{
+  "schema": "local-outbox-demo/v1",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "Transaction rollback",
+      "meaning": "Neither the order nor its event remains.",
+      "observed": {
+        "acked": 0,
+        "orders": 0,
+        "outbox": 0
+      },
+      "expected": {
+        "acked": 0,
+        "orders": 0,
+        "outbox": 0
+      }
+    },
+    {
+      "name": "Transaction commit",
+      "meaning": "Order and outbox event exist before delivery.",
+      "observed": {
+        "acked": 0,
+        "orders": 1,
+        "outbox": 1
+      },
+      "expected": {
+        "acked": 0,
+        "orders": 1,
+        "outbox": 1
+      }
+    },
+    {
+      "name": "Acknowledged delivery",
+      "meaning": "The copied subscriber retains offset 1 after relay shutdown.",
+      "observed": {
+        "acked": 1,
+        "orders": 1,
+        "outbox": 1
+      },
+      "expected": {
+        "acked": 1,
+        "orders": 1,
+        "outbox": 1
+      }
+    },
+    {
+      "name": "First fulfillment",
+      "meaning": "The receiver committed one receipt and one effect.",
+      "observed": {
+        "deliveries": 1,
+        "effects": 1,
+        "receipts": 1
+      },
+      "expected": {
+        "deliveries": 1,
+        "effects": 1,
+        "receipts": 1
+      }
+    },
+    {
+      "name": "Identical replay",
+      "meaning": "The receiver identifies the explicit duplicate HTTP request.",
+      "observed": {
+        "http_status": 200,
+        "duplicate": true
+      },
+      "expected": {
+        "http_status": 200,
+        "duplicate": true
+      }
+    },
+    {
+      "name": "Durable deduplication",
+      "meaning": "After receiver shutdown: two deliveries, one fulfillment.",
+      "observed": {
+        "deliveries": 2,
+        "effects": 1,
+        "receipts": 1
+      },
+      "expected": {
+        "deliveries": 2,
+        "effects": 1,
+        "receipts": 1
+      }
+    }
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "rollback",
+      "exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "name": "after-rollback",
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "commit",
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "after-commit",
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "after-delivery",
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "receiver-after-delivery",
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "name": "receiver-after-replay",
+      "exit_code": 0,
+      "expected_exit_code": 0
+    }
+  ],
+  "cleanup": [
+    {
+      "name": "relay",
+      "pid": 18000,
+      "exit_code": 0,
+      "forced_kill": false,
+      "unexpected_exit": false
+    },
+    {
+      "name": "receiver",
+      "pid": 17993,
+      "exit_code": 0,
+      "forced_kill": false,
+      "unexpected_exit": false
+    }
+  ],
+  "binary_sha256": "4d600d483911d676be769dbb4ad0ddefb342a1441a96ded5c26ce65bb8f95b7f",
+  "failure": null,
+  "finished_utc": "2026-10-14T17:41:52.995222+00:00",
+  "database_sha256": {
+    "producer.sqlite": "62002b1f84de718f36d3a86c23655953352607d4b21d0321ca6625b70443634b",
+    "receiver.sqlite": "1f06512b6ace80354ded54bf65cb5f08e52f4c7c1aa53bcd2b6d65d6842dce1c"
+  }
+}

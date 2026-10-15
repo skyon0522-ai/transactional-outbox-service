@@ -1,74 +1,82 @@
-# Local transactional outbox for synthetic purchase requests
+# Local transactional outbox
 
-## Problem
+Store a purchase and its event in one SQLite transaction, then deliver the event
+through a separate relay to a durable receiver. Try rollback, acknowledged
+delivery and duplicate handling from one terminal, with fixed synthetic data.
 
-Commit a purchase record and its event in one SQLite transaction, then forward the event from a separate process to a durable, deduplicating local receiver. This is a bounded integration example assembled from actual copied Watermill and Watermill SQLite implementations.
+## Build on Linux
 
-## Demo
-
-Use Go 1.27.2 with the checked-in module manifests and local component replacements. Run the producer sequentially; this example makes no concurrent-writer claim. Commands below assume a POSIX shell from the repository directory.
+Requires Go **1.27.2** and Python **3.10+**. From a downloaded or cloned checkout:
 
 ```sh
 cd app
-GOTOOLCHAIN=local GOFLAGS=-mod=readonly go test -count=1 -timeout=60s .
-GOTOOLCHAIN=local GOFLAGS=-mod=readonly go build -o ../outbox .
+GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOWORK=off go build -o ../outbox .
 cd ..
-./outbox init --db producer.sqlite
-./outbox produce --db producer.sqlite --event event-1 --order order-1 --item 'synthetic rice' --quantity 2
 ```
 
-In a second terminal, start the receiver. In a third terminal, start the relay. All HTTP addresses must be numeric loopback addresses.
+Go downloads normal dependencies on the first build. The module replacements
+use the checked-in Watermill and Watermill SQLite implementations. No account,
+container, external broker or cloud service is needed to run the demo.
+
+## Run the demo
 
 ```sh
-./outbox receiver --db receiver.sqlite --listen 127.0.0.1:8099
-./outbox relay --db producer.sqlite --target http://127.0.0.1:8099/orders
+python3 tools/run_demo.py --output-dir demo-runs/first
 ```
 
-Inspect the files after stopping the processes with Ctrl+C:
+The runner starts and stops its receiver and relay on numeric loopback
+addresses. It prints six checks and the full report path. Open that
+`report.html` file in your browser; it works offline. No browser opens
+automatically. To repeat the demo, select a new output directory.
 
-```sh
-./outbox inspect --db producer.sqlite
-./outbox inspect --db receiver.sqlite --role receiver
-```
-
-On Ctrl+C or SIGTERM, the receiver closes its listener and waits up to three seconds for active requests to finish before returning. A shutdown error, including an expired drain deadline, is returned to the command instead of being discarded.
-
-For one accepted event, expect producer `orders=1,outbox=1,acked=1` and receiver `receipts=1,effects=1,deliveries=1`. `outbox` is the retained message-log row count; acknowledged rows are not deleted. `acked` is the copied subscriber's durable acknowledged offset for its single default consumer group.
-
-Use a new event/order ID with `--rollback` to request a failure after both writes. The command exits with an error and neither new record remains. Event IDs are 1–80 printable ASCII bytes with no spaces; order IDs are at most 80 bytes, items at most 200 bytes, and quantities are 1–1,000,000. The receiver accepts at most 4,096 bytes and validates the event, topic and matching header identity.
-
-## What this project adds
-
-The application adapts purchase creation, a loopback-only relay, and a durable
-receiver with byte-equal duplicate checks around the included message components.
-Contract tests and restart probes exercise this composition.
-
-The producer never sends a purchase directly to the receiver. The copied transaction-scoped SQLite Publisher stores the event in the same transaction as `orders`; the copied Watermill Publisher supplies the forwarding envelope; the copied Forwarder and SQLite Subscriber deliver and acknowledge it. The receiver commits its receipt and fulfillment record in a second local transaction.
-
-### Implementation map
-
-| Start here | Purpose |
+| Check | Expected result |
 | --- | --- |
-| [app/main.go](app/main.go) | Adapted producer, forwarder and local receiver |
-| [app/main_test.go](app/main_test.go), [source check](tools/verify_app.py) and [restart check](tools/verify_durable_restart.py) | Contract, source identity and durable restart checks |
-| [components/watermill/](components/watermill/) and [components/watermill-sqlite/](components/watermill-sqlite/) | Unchanged running message/SQLite implementations |
-| [PROVENANCE.md](PROVENANCE.md) and [adaptation.diff](adaptation.diff) | Source analysis, licenses and exact application changes |
-| [VERIFICATION.md](VERIFICATION.md) and [verification-summary.json](verification-summary.json) | Observed results and limits |
+| Requested rollback | 0 orders and 0 outbox events |
+| Commit before delivery | 1 order and 1 outbox event, acknowledged offset 0 |
+| Relay delivery | Acknowledged offset 1; 1 receipt and 1 fulfillment |
+| Explicit identical HTTP replay | Duplicate accepted; 2 deliveries and 1 fulfillment |
 
-The copied Watermill documentation includes site-built and archived routes that do not resolve as ordinary GitHub file links. For complete upstream material, use the pinned [Watermill repository](https://github.com/ThreeDotsLabs/watermill/tree/080d4b4e7fe6105ab880d1becd5cf91af0235d8c) and [Watermill SQLite repository](https://github.com/ThreeDotsLabs/watermill-sqlite/tree/a2a915319684f030296ccb15403b37f292640ad2). The copied source remains unchanged; this root README documents the local assembly.
+Each new output directory retains `report.html`, machine-readable `result.json`,
+both SQLite files and command/process logs. Only `result.json` with
+`"status": "passed"` marks a completed run, including process shutdown. Failed
+and interrupted output is kept for inspection. Existing directories are refused.
+The runner processes only its fixed synthetic purchase; it has no input-data flag.
 
-## Verification
+See a [retained example report](examples/demo/report.html) and its
+[JSON result](examples/demo/result.json) before running it yourself.
 
-See [VERIFICATION.md](VERIFICATION.md) for observed original → unchanged duplicate → assembled comparisons and durable process evidence. [PROVENANCE.md](PROVENANCE.md) identifies the exact copied implementations, their MIT licenses, the initial copied application source, and the necessary adaptation.
+![Actual synthetic rollback, delivery and duplicate results](docs/assets/demo.png)
+
+## Operate the commands yourself
+
+The same executable supports `init`, `produce`, `receiver`, `relay` and `inspect`.
+See [manual operation and troubleshooting](docs/operations.md) for the individual
+commands, expected counts, shutdown behavior and failed-run recovery.
+
+## Implementation and checks
+
+- [app/main.go](app/main.go): producer, loopback HTTP adapter and durable receiver.
+- [app/main_test.go](app/main_test.go): transaction, validation, retry and shutdown contracts.
+- [VERIFICATION.md](VERIFICATION.md): observed checks and reproducible verification commands.
+- [PROVENANCE.md](PROVENANCE.md): copied source revisions, MIT licenses and adaptation boundary.
+- [SECURITY.md](SECURITY.md): security limits and problem reporting.
+
+The app executes the included Watermill Forwarder and SQLite Publisher/Subscriber;
+the demo runner only orchestrates the existing commands. Copied component bytes
+and licenses remain unchanged. See [design references](docs/DESIGN.md) for the
+demo's retained workflow and report structure.
 
 ## Limits
 
-This is local synthetic data, with no authentication, external broker, account, cloud service, deployment or load test. It demonstrates at-least-once delivery with a receiver transaction that deduplicates byte-identical repeats. It does not promise exactly-once transport.
+This local example demonstrates at-least-once delivery with a receiver transaction
+that deduplicates byte-identical repeats. It does not promise exactly-once
+transport. The duplicate demo explicitly replays HTTP bytes; the separate restart
+probe tests a lost response and restarted relay.
 
-Watermill SQLite's upstream README calls the library beta and says it has not been widely tested in production. Its `TestConcurrentTransactions` is explicitly skipped because the one-connection case deadlocks. The app retains `SetMaxOpenConns(1)` and tests one active relay and one producer invocation at a time. These checks do not establish multiwriter, concurrent transaction, high availability, power-loss or production safety.
-
-Conflicting event-ID payloads return HTTP 409 and remain unacknowledged at the relay. There is no automatic correction or dead-letter queue. An unavailable receiver remains retryable; the copied SQLite Subscriber's nack path may retry rapidly. Raw byte equality is deliberate: differently serialized bytes under an existing event ID are a conflict. The append-only message/receipt history has no retention policy.
-
-## Security and reporting
-
-Read [security limits and reporting guidance](SECURITY.md) before adapting this example.
+Use one sequential producer and one active relay. Watermill SQLite is beta; its
+upstream concurrent-transaction test is skipped because the one-connection case
+deadlocks. These checks do not establish multiwriter, high availability,
+power-loss or production safety. There is no authentication, retention policy,
+dead-letter queue or automatic conflict correction. Conflicting event-ID bytes
+return HTTP 409 and remain unacknowledged; unavailable receivers remain retryable
+and may be retried rapidly. Outbox rows remain after acknowledgment.

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>Demo checks passed · Transactional outbox</title><style>
+:root{--ink:#172c3e;--muted:#516678;--line:#d6e0e6;--brand:#16615c;--bg:#f3f6f8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,sans-serif}
+main{max-width:1040px;margin:auto;padding:40px 28px}h1{font-size:clamp(28px,4vw,40px);line-height:1.2}h2{font-size:23px}
+.eyebrow{color:var(--brand);font-weight:700}.intro{max-width:76ch;color:var(--muted)}
+section{padding:24px;margin:24px 0;background:white;border:1px solid var(--line);border-radius:12px}
+pre,code{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px}.table-scroll{overflow-x:auto}
+table{width:100%;min-width:640px;border-collapse:collapse;text-align:left}th,td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}thead{background:#edf3f5}
+summary{cursor:pointer;min-height:44px}summary:focus-visible,.table-scroll:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offset:3px}a{color:var(--brand)}.failure{color:#9b2424}
+@media(max-width:700px){main{padding:24px 16px}section{padding:16px}th,td{padding:8px}}
+@media print{body{background:white}main{padding:0}section{break-inside:avoid}.table-scroll{overflow:visible}table{min-width:0}}
+</style></head><body><main><header><p class="eyebrow">LOCAL SYNTHETIC DEMO</p>
+<h1>Demo checks passed</h1><p class="intro">One purchase, two transaction boundaries. The producer stores an order and its outbox event together. A separate relay delivers the event; the receiver stores its receipt and fulfillment together.</p></header>
+<section aria-labelledby="outcome"><h2 id="outcome">What happened</h2>
+<div class="table-scroll" role="region" aria-label="Observed demo checks" tabindex="0"><table><thead><tr><th scope="col">Check</th><th scope="col">Meaning</th><th scope="col">Observed state</th></tr></thead><tbody><tr><th scope='row'>Transaction rollback</th><td>Neither the order nor its event remains.</td><td><pre>{&quot;acked&quot;: 0, &quot;orders&quot;: 0, &quot;outbox&quot;: 0}</pre></td></tr><tr><th scope='row'>Transaction commit</th><td>Order and outbox event exist before delivery.</td><td><pre>{&quot;acked&quot;: 0, &quot;orders&quot;: 1, &quot;outbox&quot;: 1}</pre></td></tr><tr><th scope='row'>Acknowledged delivery</th><td>The copied subscriber retains offset 1 after relay shutdown.</td><td><pre>{&quot;acked&quot;: 1, &quot;orders&quot;: 1, &quot;outbox&quot;: 1}</pre></td></tr><tr><th scope='row'>First fulfillment</th><td>The receiver committed one receipt and one effect.</td><td><pre>{&quot;deliveries&quot;: 1, &quot;effects&quot;: 1, &quot;receipts&quot;: 1}</pre></td></tr><tr><th scope='row'>Identical replay</th><td>The receiver identifies the explicit duplicate HTTP request.</td><td><pre>{&quot;duplicate&quot;: true, &quot;http_status&quot;: 200}</pre></td></tr><tr><th scope='row'>Durable deduplication</th><td>After receiver shutdown: two deliveries, one fulfillment.</td><td><pre>{&quot;deliveries&quot;: 2, &quot;effects&quot;: 1, &quot;receipts&quot;: 1}</pre></td></tr></tbody></table></div>
+<p>The duplicate check explicitly replays the same bytes over HTTP after the relay acknowledges delivery. It does not simulate a lost response. The separate restart verification covers that failure mode.</p></section>
+<section aria-labelledby="files"><h2 id="files">Keep or inspect the evidence</h2>
+<p><a href="result.json">result.json</a> is the machine-readable completion marker: only <code>status: passed</code> means the whole run, including owned-process shutdown, finished. A missing file or any other status is incomplete.</p>
+<p><code>producer.sqlite</code> retains the order, message log and acknowledged offset. <code>receiver.sqlite</code> retains the receipt, fulfillment and delivery count. <code>*.stdout</code>, <code>*.stderr</code> and <code>*.log</code> retain command and process output.</p>
+<details><summary>Run fingerprints and process cleanup</summary><pre>{
+  &quot;binary_sha256&quot;: &quot;4d600d483911d676be769dbb4ad0ddefb342a1441a96ded5c26ce65bb8f95b7f&quot;,
+  &quot;database_sha256&quot;: {
+    &quot;producer.sqlite&quot;: &quot;62002b1f84de718f36d3a86c23655953352607d4b21d0321ca6625b70443634b&quot;,
+    &quot;receiver.sqlite&quot;: &quot;1f06512b6ace80354ded54bf65cb5f08e52f4c7c1aa53bcd2b6d65d6842dce1c&quot;
+  },
+  &quot;cleanup&quot;: [
+    {
+      &quot;name&quot;: &quot;relay&quot;,
+      &quot;pid&quot;: 18000,
+      &quot;exit_code&quot;: 0,
+      &quot;forced_kill&quot;: false,
+      &quot;unexpected_exit&quot;: false
+    },
+    {
+      &quot;name&quot;: &quot;receiver&quot;,
+      &quot;pid&quot;: 17993,
+      &quot;exit_code&quot;: 0,
+      &quot;forced_kill&quot;: false,
+      &quot;unexpected_exit&quot;: false
+    }
+  ]
+}</pre></details></section>
+<section aria-labelledby="limits"><h2 id="limits">What this example establishes</h2><p>The observed checks cover one sequential producer and one relay on local SQLite files with fixed synthetic data. Repeated byte-identical delivery creates one fulfillment. This is at-least-once delivery with receiver deduplication; it does not establish exactly-once transport, power-loss recovery, concurrent-writer safety or production readiness.</p>
+<p>All child processes use numeric loopback addresses. The runner opens no browser and sends no data to an external service. This file works offline without JavaScript.</p></section>
+</main></body></html>

@@ -18,6 +18,10 @@ jobs:
         run: python tools/verify_components.py ci-components
       - name: Verify the assembled application
         run: python tools/verify_app.py ci-app
+      - name: Verify demo runner safety contracts
+        run: python -B -m unittest discover -s tools -p 'test_run_demo.py' -v
+      - name: Run the public synthetic demo
+        run: python -B tools/run_demo.py --binary .verification/ci-app/outbox --output-dir .verification/ci-demo
       - name: Verify durable restart and lost acknowledgment
         run: python tools/verify_durable_restart.py ci-app ci-durable
       - uses: actions/upload-artifact@v4
@@ -29,3 +33,5 @@ jobs:
             .verification/ci-components/receipt.json
             .verification/ci-app/receipt.json
             .verification/ci-durable/receipt.json
+            .verification/ci-demo/result.json
+            .verification/ci-demo/report.html
